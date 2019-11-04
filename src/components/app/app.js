@@ -7,6 +7,9 @@ import ItemStatusFilter from '../item-status-filter';
 import ItemAddForm from '../item-add-form';
 
 import './app.css';
+import { SSL_OP_SSLEAY_080_CLIENT_DH_BUG } from 'constants';
+import { returnStatement } from '@babel/types';
+import { template } from '@babel/core';
 
 export default class App extends Component {
   maxId = 100;
@@ -17,9 +20,12 @@ export default class App extends Component {
         this.createTodoItem('Drink Coffee'),
         this.createTodoItem('Make Awesome App'),
         this.createTodoItem('Have a lunch')
-      ]
+      ],
+      term: '',
+      filter: 'all' //active, all, done
     };
   }
+
 
   createTodoItem(label) {
     return{
@@ -41,6 +47,14 @@ export default class App extends Component {
       };
     })
   };
+
+  onChangeSearchPanel = (term) => {
+    this.setState({term});
+  }
+
+  onFilterChange = (filter) => {
+    this.setState({filter});
+  }
 
   addItem = (text) => {
     const newItem = this.createTodoItem(text);
@@ -81,23 +95,60 @@ export default class App extends Component {
       }
     })
   };
+  //---------------------------------------------------------
+  // let fruits = ["Banana", "Orange", "Apple", "Mango"];
   
+  // let n = {...fruits};
+  // for(let i=0;i<4;i++) {
+  //   console.log(n[i].includes("M"))
+  // }
+  // //n.for
+  // console.log(n);
+  //-----------------------------------------------------------
 
+  search(items,term) {
+    if(term.length === 0) {
+        return items;
+    }
+    return items.filter((item) => {
+      return item.label
+      .toLowerCase().includes(term.toLowerCase())
+    });
+   
+  }
+//Включить в search
+  filter(items,filter) {
+    if(filter=='done'){
+    return items.filter((item) => item.done)
+  }else if(filter=='active') {
+      return items.filter((item) => !item.done)
+    } else if(filter=='all') {
+      return items;
+    } else {
+      return items;
+    }
+  }
+  
   render() {
-    const { todoData } = this.state;
+    const { todoData,term, filter } = this.state;
     const doneCount = todoData
                       .filter((el) => el.done ).length;
     const todoCount = todoData.length - doneCount;
+    const visibleItems = this.filter( this.search(todoData, term), filter);
+    //const visibleItems = this.filter(todoData, 'active');
     return (
       <div className="todo-app">
         <AppHeader toDo={todoCount} done={doneCount} />
         <div className="top-panel d-flex">
-          <SearchPanel />
-          <ItemStatusFilter />
+          <SearchPanel onSearchChange={this.onChangeSearchPanel}/>
+          {/* <ItemStatusFilter onStatusFilterChange={this.onStatusFilterChange}/> */}
+          <ItemStatusFilter 
+          filter={filter}
+          onFilterChange={this.onFilterChange}/>
         </div>
   
         <TodoList 
-        todos={todoData} 
+        todos={visibleItems} 
         onDeleted={ this.deleteItem } 
         onToggleImportant={this.onToggleImportant} 
         onToggleDone={this.onToggleDone} />
